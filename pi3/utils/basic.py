@@ -10,13 +10,22 @@ import numpy as np
 
 def load_images_as_tensor(path='data/truck', interval=1, PIXEL_LIMIT=255000):
     """
-    Loads images from a directory or video, resizes them to a uniform size,
+    Loads images from a directory, list of image paths, or video, resizes them to a uniform size,
     then converts and stacks them into a single [N, 3, H, W] PyTorch tensor.
     """
-    sources = [] 
-    
+    sources = []
+
     # --- 1. Load image paths or video frames ---
-    if osp.isdir(path):
+    if isinstance(path, list):
+        # Handle list of image paths
+        print(f"Loading {len(path)} images from list...")
+        for i in range(0, len(path), interval):
+            img_path = path[i]
+            try:
+                sources.append(Image.open(img_path).convert('RGB'))
+            except Exception as e:
+                print(f"Could not load image {img_path}: {e}")
+    elif osp.isdir(path):
         print(f"Loading images from directory: {path}")
         filenames = sorted([x for x in os.listdir(path) if x.lower().endswith(('.png', '.jpg', '.jpeg'))])
         for i in range(0, len(filenames), interval):
@@ -39,7 +48,7 @@ def load_images_as_tensor(path='data/truck', interval=1, PIXEL_LIMIT=255000):
             frame_idx += 1
         cap.release()
     else:
-        raise ValueError(f"Unsupported path. Must be a directory or a .mp4 file: {path}")
+        raise ValueError(f"Unsupported path. Must be a list, directory, or a .mp4 file: {path}")
 
     if not sources:
         print("No images found or loaded.")

@@ -9,7 +9,7 @@ setup(
     python_requires=">=3.6, <4",
     entry_points={
         "console_scripts": [
-            "pi3=pi3.example:main",
+            "pi3=pi3.demo_viser:main",
         ],
     },
     project_urls={
