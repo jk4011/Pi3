@@ -147,12 +147,14 @@ Here is a minimal example of how to run the model on a batch of images.
 
 ```python
 import torch
-from pi3.models.pi3 import Pi3
+# from pi3.models.pi3 import Pi3            # old version
+from pi3.models.pi3x import Pi3X            # new version (Recommended)
 from pi3.utils.basic import load_images_as_tensor # Assuming you have a helper function
 
 # --- Setup ---
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-model = Pi3.from_pretrained("yyfz233/Pi3").to(device).eval()
+# model = Pi3.from_pretrained("yyfz233/Pi3").to(device).eval()
+model = Pi3X.from_pretrained("yyfz233/Pi3X").to(device).eval()
 # or download checkpoints from `https://huggingface.co/yyfz233/Pi3/resolve/main/model.safetensors`
 
 # --- Load Data ---
