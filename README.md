@@ -48,18 +48,26 @@
 
 
 ## 📣 Updates
-* **[September 3, 2025]** ⭐️ Training code is updated! See `training` branch for details.
-* **[July 29, 2025]** 📈 Evaluation code is released! See `evaluation` branch for details.
+* **[December 28, 2025]** 🚀 **Pi3X Released!** We have upgraded the model to **Pi3X**. This improved version eliminates grid artifacts (smoother point clouds), supports **conditional injection** (camera pose, intrinsics, depth), and enables **approximate metric scale** reconstruction.
+* **[September 3, 2025]** ⭐️ Training code is updated! See [`training`](https://github.com/yyfz233/Pi3/tree/training) branch for details.
+* **[July 29, 2025]** 📈 Evaluation code is released! See [`evaluation`](https://github.com/yyfz233/Pi3/tree/evaluation) branch for details.
 * **[July 16, 2025]** 🚀 Hugging Face Demo and inference code are released!
 
 
 ## ✨ Overview
-We introduce $\pi^3$ (Pi-Cubed), a novel feed-forward neural network that revolutionizes visual geometry reconstruction by **eliminating the need for a fixed reference view**. Traditional methods, which rely on a designated reference frame, are often prone to instability and failure if the reference is suboptimal.
+We introduce $\pi^3$, a novel feed-forward neural network that revolutionizes visual geometry reconstruction by **eliminating the need for a fixed reference view**. Traditional methods, which rely on a designated reference frame, are often prone to instability and failure if the reference is suboptimal.
 
-In contrast, $\pi^3$ employs a fully **permutation-equivariant** architecture. This allows it to directly predict affine-invariant camera poses and scale-invariant local point maps from an unordered set of images, breaking free from the constraints of a reference frame. This design makes our model inherently **robust to input ordering** and leads to **higher accuracy**.
+In contrast, $\pi^3$ employs a fully **permutation-equivariant** architecture. This allows it to directly predict affine-invariant camera poses and scale-invariant local point maps from an unordered set of images, breaking free from the constraints of a reference frame. This design makes our model inherently **robust to input orderi
+
+### Introducing Pi3X (Engineering Update)
+Building upon the original framework, we present **Pi3X**, an enhanced version focused on flexibility and reconstruction quality:
+* **Smoother Reconstruction:** We replaced the original output head with a **Convolutional Head**, significantly reducing grid-like artifacts and producing much smoother point clouds.
+* **Flexible Conditioning:** Pi3X supports the optional injection of **camera poses, intrinsics, and depth**. This allows for more controlled reconstruction when partial priors are available.
+* **Metric Scale:** The model now supports **metric scale reconstruction** (approximate), moving beyond purely scale-invariant predictions.
+
+Overall, Pi3X offers slightly better reconstruction quality than the original $\pi^3$ while supporting a wider range of modal inputs.
 
 A key emergent property of our simple, bias-free design is the learning of a dense and structured latent representation of the camera pose manifold. Without complex priors or training schemes, $\pi^3$ achieves **state-of-the-art performance** 🏆 on a wide range of tasks, including camera pose estimation, monocular/video depth estimation, and dense point map estimation.
-
 
 ## 🚀 Quick Start
 
@@ -78,11 +86,25 @@ Try our example inference script. You can run it on a directory of images or a v
 If the automatic download from Hugging Face is slow, you can download the model checkpoint manually from [here](https://huggingface.co/yyfz233/Pi3/resolve/main/model.safetensors) and specify its local path using the `--ckpt` argument.
 
 ```bash
-# Run with default example video
-python example.py
+# Run with the default example video
+# python example.py    # Inference with Pi3 (Original)
+python example_mm.py   # [New] Inference with Pi3X (Recommended)
 
 # Run on your own data (image folder or .mp4 file)
-python example.py --data_path <path/to/your/images_dir_or_video.mp4>
+# python example.py --data_path <path/to/data>     # Pi3
+python example_mm.py --data_path <path/to/data>    # Pi3X
+```
+
+### Advanced: Multimodal Conditioning (Pi3X Only)
+To utilize additional input modalities (e.g., camera poses, intrinsics, or depth), please refer to example_mm.py for specific data formatting details.
+
+Below is an example comparing reconstruction with and without condition injection. You can compare the resulting point clouds to observe the improvements brought by multimodal inputs.
+``` bash
+# 1. Inference WITH conditioning (poses, intrinsics, etc.)
+python example_mm.py --data_path examples/room/rgb --conditions_path examples/room/condition.npz --save_path examples/room_with_conditions.ply
+
+# 2. Inference WITHOUT conditioning (image only)
+python example_mm.py --data_path examples/room/rgb --save_path examples/room_no_conditions.ply
 ```
 
 **Optional Arguments:**
