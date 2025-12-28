@@ -49,8 +49,8 @@
 
 ## 📣 Updates
 * **[December 28, 2025]** 🚀 **Pi3X Released!** We have upgraded the model to **Pi3X**. This improved version eliminates grid artifacts (smoother point clouds), supports **conditional injection** (camera pose, intrinsics, depth), and enables **approximate metric scale** reconstruction.
-* **[September 3, 2025]** ⭐️ Training code is updated! See [`training`](https://github.com/yyfz233/Pi3/tree/training) branch for details.
-* **[July 29, 2025]** 📈 Evaluation code is released! See [`evaluation`](https://github.com/yyfz233/Pi3/tree/evaluation) branch for details.
+* **[September 3, 2025]** ⭐️ Training code is updated! See [`training`](https://github.com/yyfz/Pi3/tree/training) branch for details.
+* **[July 29, 2025]** 📈 Evaluation code is released! See [`evaluation`](https://github.com/yyfz/Pi3/tree/evaluation) branch for details.
 * **[July 16, 2025]** 🚀 Hugging Face Demo and inference code are released!
 
 
