@@ -31,7 +31,7 @@ if __name__ == '__main__':
         args.interval = 10 if args.data_path.endswith('.mp4') else 1
     print(f'Sampling interval: {args.interval}')
 
-    from utils.debug import setup_debug
+    # from utils.debug import setup_debug
     # setup_debug()
 
     # 1. Prepare model
