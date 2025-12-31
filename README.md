@@ -48,7 +48,7 @@
 
 
 ## 📣 Updates
-* **[December 28, 2025]** 🚀 **Pi3X Released!** We have upgraded the model to **Pi3X**. This improved version eliminates grid artifacts (smoother point clouds), supports **conditional injection** (camera pose, intrinsics, depth), and enables **approximate metric scale** reconstruction.
+* **[December 28, 2025]** 🚀 **Pi3X Released!** We have upgraded the model to **Pi3X**. This improved version eliminates grid artifacts (smoother point clouds), offers more precise confidence scoring, supports **conditional injection** (camera pose, intrinsics, depth), and enables **approximate metric scale** reconstruction.
 * **[September 3, 2025]** ⭐️ Training code is updated! See [`training`](https://github.com/yyfz/Pi3/tree/training) branch for details.
 * **[July 29, 2025]** 📈 Evaluation code is released! See [`evaluation`](https://github.com/yyfz/Pi3/tree/evaluation) branch for details.
 * **[July 16, 2025]** 🚀 Hugging Face Demo and inference code are released!
@@ -59,15 +59,16 @@ We introduce $\pi^3$, a novel feed-forward neural network that revolutionizes vi
 
 In contrast, $\pi^3$ employs a fully **permutation-equivariant** architecture. This allows it to directly predict affine-invariant camera poses and scale-invariant local point maps from an unordered set of images, breaking free from the constraints of a reference frame. This design makes our model inherently **robust to input orderi
 
+A key emergent property of our simple, bias-free design is the learning of a dense and structured latent representation of the camera pose manifold. Without complex priors or training schemes, $\pi^3$ achieves **state-of-the-art performance** 🏆 on a wide range of tasks, including camera pose estimation, monocular/video depth estimation, and dense point map estimation.
+
 ### Introducing Pi3X (Engineering Update)
 Building upon the original framework, we present **Pi3X**, an enhanced version focused on flexibility and reconstruction quality:
 * **Smoother Reconstruction:** We replaced the original output head with a **Convolutional Head**, significantly reducing grid-like artifacts and producing much smoother point clouds.
 * **Flexible Conditioning:** Pi3X supports the optional injection of **camera poses, intrinsics, and depth**. This allows for more controlled reconstruction when partial priors are available.
+* **Reliable Confidence:** We improved how confidence is learned. Instead of approximating a binary mask, the model now predicts continuous quality levels, making the confidence scores significantly more reliable for filtering noise.
 * **Metric Scale:** The model now supports **metric scale reconstruction** (approximate), moving beyond purely scale-invariant predictions.
 
 Overall, Pi3X offers slightly better reconstruction quality than the original $\pi^3$ while supporting a wider range of modal inputs.
-
-A key emergent property of our simple, bias-free design is the learning of a dense and structured latent representation of the camera pose manifold. Without complex priors or training schemes, $\pi^3$ achieves **state-of-the-art performance** 🏆 on a wide range of tasks, including camera pose estimation, monocular/video depth estimation, and dense point map estimation.
 
 ## 🚀 Quick Start
 
