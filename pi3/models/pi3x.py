@@ -380,6 +380,9 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
             # convert camera poses to metric
             camera_poses[..., :3, 3] = camera_poses[..., :3, 3] * metric.view(B, 1, 1, 1)
 
+            # convert local_points to metric
+            local_points = local_points * metric.view(B, 1, 1, 1, 1)
+
         return dict(
             points=points,
             local_points=local_points,
