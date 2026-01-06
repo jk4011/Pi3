@@ -377,6 +377,9 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
             # points
             points = torch.einsum('bnij, bnhwj -> bnhwi', camera_poses, homogenize_points(local_points))[..., :3] * metric.view(B, 1, 1, 1, 1)
 
+            # convert camera poses to metric
+            camera_poses[..., :3, 3] = camera_poses[..., :3, 3] * metric.view(B, 1, 1, 1)
+
         return dict(
             points=points,
             local_points=local_points,
