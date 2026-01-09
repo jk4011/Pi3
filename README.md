@@ -84,7 +84,7 @@ pip install -r requirements.txt
 
 Try our example inference script. You can run it on a directory of images or a video file.
 
-If the automatic download from Hugging Face is slow, you can download the model checkpoint manually from [here](https://huggingface.co/yyfz233/Pi3/resolve/main/model.safetensors) and specify its local path using the `--ckpt` argument.
+If the automatic download from Hugging Face is slow, you can download the model checkpoint manually from [Pi3](https://huggingface.co/yyfz233/Pi3/resolve/main/model.safetensors) or [Pi3X](https://huggingface.co/yyfz233/Pi3X/resolve/main/model.safetensors) and specify its local path using the `--ckpt` argument.
 
 ```bash
 # Run with the default example video
