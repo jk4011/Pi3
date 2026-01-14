@@ -196,6 +196,9 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
         rays=None,
         poses=None,
         with_prior=True,
+        mask_add_depth=None,
+        mask_add_ray=None,
+        mask_add_pose=None,
     ):
         """
         Forward pass with optional multimodal conditions.
@@ -215,6 +218,14 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
             depths (torch.Tensor, optional): Ground truth or prior depth maps.
                 Shape: (B, N, H, W).
                 Invalid values (e.g., sky or missing data) should be set to 0.
+            mask_add_depth (torch.Tensor, optional): Mask for depth condition.
+                Shape: (B, N, N).
+            mask_add_ray (torch.Tensor, optional): Mask for ray/intrinsic condition.
+                Shape: (B, N, N).
+            mask_add_pose (torch.Tensor, optional): Mask for pose condition.
+                Shape: (B, N, N).
+                Note: Requires at least two frames to be True to establish a meaningful
+                coordinate system (absolute pose for a single frame provides no relative constraint).
 
         Returns:
             dict: Model outputs containing 'points', 'conf', etc.
@@ -225,7 +236,17 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
         patch_h, patch_w = H // 14, W // 14
 
         # encode
-        hidden, poses_, use_depth_mask, use_pose_mask, norm_factor = self.encode(imgs, with_prior=with_prior, depths=depths, intrinsics=intrinsics, poses=poses, rays=rays)
+        hidden, poses_, use_depth_mask, use_pose_mask, norm_factor = self.encode(
+            imgs, 
+            with_prior=with_prior, 
+            depths=depths, 
+            intrinsics=intrinsics, 
+            poses=poses, 
+            rays=rays,
+            mask_add_depth=mask_add_depth,
+            mask_add_ray=mask_add_ray,
+            mask_add_pose=mask_add_pose,
+        )
         hidden = hidden.reshape(B, N, -1, self.dec_embed_dim)
 
         # decode
@@ -244,6 +265,9 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
         rays=None,
         intrinsics=None,
         poses=None,
+        mask_add_depth=None,
+        mask_add_ray=None,
+        mask_add_pose=None,
     ):
         B, N, _, H, W = imgs.shape
         device = imgs.device
@@ -264,7 +288,7 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
                     depths = torch.zeros((B, N, H, W), device=imgs.device)
 
                 if rays is not None:
-                    rays = rays[..., :2] / rays[..., 2:3]
+                    rays = rays[..., :2] / (rays[..., 2:3] + 1e-6)
                 else:
                     if intrinsics is None:
                         p_ray = 0.0
@@ -280,9 +304,12 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
                 else:
                     assert rays is not None                     # rays should be along with poses
                     
-                mask_add_depth = torch.rand((B, N), device=device) <= p_depth
-                mask_add_ray = torch.rand((B, N), device=device) <= p_ray
-                mask_add_pose = torch.rand((B, N), device=device) <= p_pose
+                if mask_add_depth is None:
+                    mask_add_depth = torch.rand((B, N), device=device) <= p_depth
+                if mask_add_ray is None:
+                    mask_add_ray = torch.rand((B, N), device=device) <= p_ray
+                if mask_add_pose is None:
+                    mask_add_pose = torch.rand((B, N), device=device) <= p_pose
 
                 # pose is injected relatively. so at least two frame should be true.
                 num_valid_pose = mask_add_pose.sum(dim=1)
@@ -365,6 +392,7 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
 
             z = torch.exp(z.clamp(max=15.0))
             local_points = torch.cat([xy * z, z], dim=-1)
+            rays = F.normalize(torch.cat([xy, torch.ones_like(z)], dim=-1), dim=-1)
 
             camera_poses = self.camera_head(ret_camera[:, self.patch_start_idx:].float(), patch_h, patch_w).reshape(B, N, 4, 4)
 
@@ -386,6 +414,7 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
         return dict(
             points=points,
             local_points=local_points,
+            rays=rays,
             conf=conf,
             camera_poses=camera_poses,  
             metric=metric,
@@ -417,10 +446,13 @@ class Pi3X(nn.Module, PyTorchModelHubMixin):
             pos = torch.cat([pos_special, pos_patch], dim=1)
 
         if self.use_multimodal:
-            view_interaction_mask = use_pose_mask.unsqueeze(2) & use_pose_mask.unsqueeze(1)
-            token_interaction_mask = view_interaction_mask.repeat_interleave(hw - self.patch_start_idx, dim=1)
-            token_interaction_mask = token_interaction_mask.repeat_interleave(hw - self.patch_start_idx, dim=2)
-            pose_inject_mask = token_interaction_mask[:, None]
+            if use_pose_mask.sum() == B * N:
+                pose_inject_mask = None
+            else:
+                view_interaction_mask = use_pose_mask.unsqueeze(2) & use_pose_mask.unsqueeze(1)
+                token_interaction_mask = view_interaction_mask.repeat_interleave(hw - self.patch_start_idx, dim=1)
+                token_interaction_mask = token_interaction_mask.repeat_interleave(hw - self.patch_start_idx, dim=2)
+                pose_inject_mask = token_interaction_mask[:, None]
 
         for i in range(len(self.decoder)):
             blk = self.decoder[i]

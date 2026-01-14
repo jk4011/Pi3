@@ -87,6 +87,14 @@ if __name__ == '__main__':
         depths (torch.Tensor, optional): Ground truth or prior depth maps.
             Shape: (B, N, H, W).
             Invalid values (e.g., sky or missing data) should be set to 0.
+        mask_add_depth (torch.Tensor, optional): Mask for depth condition.
+            Shape: (B, N, N).
+        mask_add_ray (torch.Tensor, optional): Mask for ray/intrinsic condition.
+            Shape: (B, N, N).
+        mask_add_pose (torch.Tensor, optional): Mask for pose condition.
+            Shape: (B, N, N).
+            Note: Requires at least two frames to be True to establish a meaningful
+            coordinate system (absolute pose for a single frame provides no relative constraint).
     """
 
     # 3. Infer
