@@ -386,8 +386,8 @@ class PRopeFlashAttention(AttentionRope):
             Ks=K,
             patches_x=patch_w,
             patches_y=patch_h,
-            image_width=H,
-            image_height=W,
+            image_width=W,
+            image_height=H,
         )
         q = apply_fn_q(q)
         k = apply_fn_kv(k)
