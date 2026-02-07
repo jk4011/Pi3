@@ -55,6 +55,11 @@ def _pi3_inference(
             - masks: Boolean masks (V, H, W)
             - images: Input images (V, 3, H, W)
     """
+
+    # Load model if not already loaded
+    if model is None:
+        load_model()
+        
     # Load images
     # For image list, we need to handle loading differently
     # Since load_images_as_tensor expects a path or video file
@@ -114,9 +119,6 @@ def pi3_inference(
     Returns:
         Dictionary containing inference results
     """
-    # Load model if not already loaded
-    if model is None:
-        load_model()
 
     # Use the provided image folder path
     print(f"Loading images from {image_folder}...")

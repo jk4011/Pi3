@@ -53,8 +53,6 @@ def viser_wrapper(
     if conf.ndim == 4:
         conf = conf[..., 0]  # (V, H, W)
 
-    # Apply masks to confidence
-    conf = conf * masks.astype(conf.dtype)
 
     # Convert images from (V, 3, H, W) to (V, H, W, 3)
     colors = images.transpose(0, 2, 3, 1)  # now (V, H, W, 3)
@@ -82,7 +80,7 @@ def viser_wrapper(
 
     # Now the slider represents percentage of points to filter out
     gui_points_conf = server.gui.add_slider(
-        "Confidence Percent", min=-100, max=100, step=0.1, initial_value=init_conf_threshold
+        "Confidence Percent", min=0, max=100, step=0.1, initial_value=init_conf_threshold
     )
 
     gui_frame_selector = server.gui.add_dropdown(
@@ -167,7 +165,7 @@ def viser_wrapper(
 
         print(f"Threshold absolute value: {threshold_val}, percentage: {current_percentage}%")
 
-        conf_mask = (conf_flat >= threshold_val) & (conf_flat > 1e-5)
+        conf_mask = (conf_flat >= threshold_val)
 
         if gui_frame_selector.value == "All":
             frame_mask = np.ones_like(conf_mask, dtype=bool)
@@ -218,11 +216,12 @@ def viser_wrapper(
 
 parser = argparse.ArgumentParser(description="Pi3 demo with viser for 3D visualization")
 parser.add_argument("--image_folder", type=str, default="examples/skating/", help="Path to folder containing images")
+parser.add_argument("--image_names", nargs="+", default=None,
+    help="List of image paths to use for inference (example: --image_names image1.png image2.png image3.png)")
 parser.add_argument("--background_mode", action="store_true", help="Run the viser server in background mode")
 parser.add_argument("--port", type=int, default=8081, help="Port number for the viser server")
 parser.add_argument("--conf_threshold", type=float, default=25.0, help="Initial percentage of low-confidence points to filter out")
 parser.add_argument("--n_images", type=int, default=-1, help="Number of images to use for visualization")
-parser.add_argument("--visualize_cache_file", type=str, default=None, help="Path to cached predictions")
 parser.add_argument("--skip_visualization", action="store_true", help="Skip visualization and only save predictions")
 
 
@@ -247,12 +246,9 @@ def main():
     """
     args = parser.parse_args()
 
-    if args.visualize_cache_file:
-        predictions = torch.load(args.visualize_cache_file)
-    else:
-        # Determine precision
-        dtype = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8 else torch.float16
-        predictions = pi3_inference(image_folder=args.image_folder, n_images=args.n_images, precision=dtype)
+    # Determine precision
+    dtype = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8 else torch.float16
+    predictions = pi3_inference(image_folder=args.image_folder, image_names=args.image_names, n_images=args.n_images, precision=dtype)
 
     if not args.skip_visualization:
         print("Processing model outputs...")
