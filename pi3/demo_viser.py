@@ -43,11 +43,11 @@ def viser_wrapper(
     server.gui.configure_theme(titlebar_content=None, control_layout="collapsible")
 
     # Unpack prediction dict
-    images = pred_dict["images"]  # (V, 3, H, W)
-    world_points = pred_dict["points"]  # (V, H, W, 3)
+    images = pred_dict["processed_images"]  # (V, 3, H, W)
+    world_points = pred_dict["world_points"]  # (V, H, W, 3)
     conf = pred_dict["conf"]  # (V, H, W, 1)
     masks = pred_dict["masks"]  # (V, H, W)
-    camera_poses = pred_dict.get("camera_poses", None)  # (V, 4, 4)
+    extrinsics = pred_dict.get("extrinsics", None)  # (V, 4, 4)
 
     # Remove the last dimension from conf if it exists
     if conf.ndim == 4:
@@ -68,8 +68,8 @@ def viser_wrapper(
     points_centered = points - scene_center
 
     # Recenter camera poses if available
-    if camera_poses is not None:
-        cam_to_world = camera_poses[:, :3, :]  # (V, 3, 4)
+    if extrinsics is not None:
+        cam_to_world = extrinsics[:, :3, :]  # (V, 3, 4)
         cam_to_world[..., -1] -= scene_center
 
     # Store frame indices so we can filter by frame
@@ -194,7 +194,7 @@ def viser_wrapper(
             fr.visible = gui_show_frames.value
 
     # Add the camera frames to the scene if camera poses are available
-    if camera_poses is not None:
+    if extrinsics is not None:
         visualize_frames(cam_to_world, images)
 
     print("Starting viser server...")
@@ -215,13 +215,19 @@ def viser_wrapper(
 
 
 parser = argparse.ArgumentParser(description="Pi3 demo with viser for 3D visualization")
-parser.add_argument("--image_folder", type=str, default="examples/skating/", help="Path to folder containing images")
+parser.add_argument("--image_folder", type=str, default="examples/skating/", help="Path to folder containing images or video file")
 parser.add_argument("--image_names", nargs="+", default=None,
     help="List of image paths to use for inference (example: --image_names image1.png image2.png image3.png)")
+parser.add_argument("--conditions_path", type=str, default=None, help="Path to .npz file with poses, depths, intrinsics")
+parser.add_argument("--n_images", type=int, default=-1, help="Number of images to use for visualization")
+parser.add_argument("--interval", type=int, default=-1, help="Frame sampling interval (-1 for auto)")
+parser.add_argument("--feat_layer", type=int, default=None, help="Decoder layer index to extract features from (0-35)")
+parser.add_argument("--upsample", action="store_true", help="Upsample features using AnyUp")
+parser.add_argument("--pca_dim", type=int, default=3, help="PCA dimension for feature reduction")
+parser.add_argument("--infer_gs", action="store_true", help="Infer Gaussian parameters")
 parser.add_argument("--background_mode", action="store_true", help="Run the viser server in background mode")
 parser.add_argument("--port", type=int, default=8081, help="Port number for the viser server")
 parser.add_argument("--conf_threshold", type=float, default=25.0, help="Initial percentage of low-confidence points to filter out")
-parser.add_argument("--n_images", type=int, default=-1, help="Number of images to use for visualization")
 parser.add_argument("--skip_visualization", action="store_true", help="Skip visualization and only save predictions")
 
 
@@ -246,9 +252,19 @@ def main():
     """
     args = parser.parse_args()
 
-    # Determine precision
     dtype = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8 else torch.float16
-    predictions = pi3_inference(image_folder=args.image_folder, image_names=args.image_names, n_images=args.n_images, precision=dtype)
+    predictions = pi3_inference(
+        image_folder=args.image_folder,
+        image_names=args.image_names,
+        n_images=args.n_images,
+        interval=args.interval,
+        precision=dtype,
+        conditions_path=args.conditions_path,
+        feat_layer=args.feat_layer,
+        upsample=args.upsample,
+        pca_dim=args.pca_dim,
+        infer_gs=args.infer_gs,
+    )
 
     if not args.skip_visualization:
         print("Processing model outputs...")
